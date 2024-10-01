@@ -26,16 +26,17 @@ class UserDataAPI(APIView):
             return Response(serializer.errors , status=status.HTTP_400_BAD_REQUEST)
  
 
-@api_view(["POST"])       
-def user_login(request):
-      data = request.data 
-      email = data["email"]
-      password = data["password"]
+     
+class UserLogin(APIView):
+      def post(self,request):
+        data = request.data 
+        email = data["email"]
+        password = data["password"]
       
-      user = authenticate(email=email,password=password)
-      if user is not None:
+        user = authenticate(email=email,password=password)
+        if user is not None:
           login(request , user)
           return Response({"message":"Login Successfully"},status=status.HTTP_200_OK)
-      else:
+        else:
           return Response({"error":"Invalid Credintials"},status=status.HTTP_400_BAD_REQUEST)
       
