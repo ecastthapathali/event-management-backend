@@ -1,42 +1,76 @@
-from django.shortcuts import render
-from .models import UserData , EventModel , EventReg , Participants , DigitalCertificate
-from .serializers import UserDataSerializer , EventModelSerializer , EventRegSerializer , ParticipantsSerializer, DigitalCertificateSerializer , LoginSerializer
-
-from rest_framework.views import APIView
+from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.decorators import api_view
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken  
+from .models import UserData , EventModel , EventReg , Participants , DigitalCertificate
+from .serializers import UserDataSerializer, LoginSerializer , EventModelSerializer , EventRegSerializer , ParticipantsSerializer, DigitalCertificateSerializer
+from rest_framework.permissions import AllowAny
 
-from django.contrib.auth import authenticate , login , logout
-from django.views.decorators.csrf import csrf_exempt
+class UserDataRUDAPI(generics.RetrieveUpdateDestroyAPIView):
+    queryset = UserData.objects.all()
+    serializer_class = UserDataSerializer
 
+class UserDataListCreateAPI(generics.ListCreateAPIView):
+    queryset = UserData.objects.all()
+    serializer_class = UserDataSerializer
 
-class UserDataAPI(APIView):
-    def get(self,request):
-        queryset = UserData.objects.all()
-        serializer = UserDataSerializer(queryset , many=True)
-        return Response(serializer.data , status=status.HTTP_200_OK)
-    
-    def post(self,request):
-        serializer = UserDataSerializer(data = request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data , status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors , status=status.HTTP_400_BAD_REQUEST)
- 
+class UserLogin(generics.CreateAPIView):
+    serializer_class = LoginSerializer
+    permission_classes = [AllowAny] 
 
-     
-class UserLogin(APIView):
-      def post(self,request):
-        data = request.data 
-        email = data["email"]
-        password = data["password"]
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        email = data.get("email")
+        password = data.get("password")
+
       
-        user = authenticate(email=email,password=password)
+        user = authenticate(email=email, password=password)
+
         if user is not None:
-          login(request , user)
-          return Response({"message":"Login Successfully"},status=status.HTTP_200_OK)
+            refresh = RefreshToken.for_user(user)
+            access_token = refresh.access_token
+
+            return Response({
+                "message": "Login Successful",
+                "refresh": str(refresh),
+                "access": str(access_token)
+            }, status=status.HTTP_200_OK)
         else:
-          return Response({"error":"Invalid Credintials"},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid Credentials"}, status=status.HTTP_400_BAD_REQUEST)
+
+class EventListCreateAPI(generics.ListCreateAPIView):
+    queryset = EventModel.objects.all()
+    serializer_class = EventModelSerializer
+
+class EventRUDAPI(generics.RetrieveUpdateDestroyAPIView):
+    queryset = EventModel.objects.all()
+    serializer_class = EventModelSerializer
+    
+class EventRegAPI(generics.ListCreateAPIView):
+    queryset = EventReg.objects.all()
+    serializer_class = EventRegSerializer
+
+class EventRegRUDAPI(generics.RetrieveUpdateDestroyAPIView):
+    queryset = EventReg.objects.all()
+    serializer_class = EventRegSerializer
+    
+class ParticipantsAPI(generics.ListCreateAPIView):
+    queryset = Participants.objects.all()
+    serializer_class = ParticipantsSerializer
+    
+ 
+class ParticipantsRUDAPI(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Participants.objects.all()
+    serializer_class = ParticipantsSerializer  
       
+class DigitalCertAPI(generics.ListCreateAPIView):
+    queryset = DigitalCertificate.objects.all()
+    serializer_class = DigitalCertificateSerializer
+    
+class ParticipantsRUDAPI(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Participants.objects.all()
+    serializer_class = ParticipantsSerializer    
+    
+class DigitalCertRUDAPI(generics.RetrieveUpdateDestroyAPIView):
+    queryset = DigitalCertificate.objects.all()
+    serializer_class = DigitalCertificateSerializer
